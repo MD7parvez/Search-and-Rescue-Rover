@@ -1,0 +1,130 @@
+
+#include <Servo.h>
+
+const byte ENA = 5;
+const byte IN1 = 7;
+const byte IN2 = 8;
+const byte ENB = 6;
+const byte IN3 = 9;
+const byte IN4 = 10;
+
+const byte GRIPPER_PIN = 3;
+
+const int GRIP_OPEN = 30;
+const int GRIP_CLOSED = 80;
+
+Servo gripper;
+int motorSpeed = 150;
+
+void setMotor(byte en, byte a, byte b, int speed) {
+  speed = constrain(speed, -255, 255);
+
+  if (speed > 0) {
+    digitalWrite(a, HIGH);
+    digitalWrite(b, LOW);
+  } else if (speed < 0) {
+    digitalWrite(a, LOW);
+    digitalWrite(b, HIGH);
+  } else {
+    digitalWrite(a, LOW);
+    digitalWrite(b, LOW);
+  }
+
+  analogWrite(en, abs(speed));
+}
+
+void stopRover() {
+  setMotor(ENA, IN1, IN2, 0);
+  setMotor(ENB, IN3, IN4, 0);
+}
+
+void drive(int left, int right) {
+  setMotor(ENA, IN1, IN2, left);
+  setMotor(ENB, IN3, IN4, right);
+}
+
+void setup() {
+  pinMode(ENA, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(ENB, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  gripper.attach(GRIPPER_PIN);
+  gripper.write(GRIP_OPEN);
+
+  Serial.begin(9600);
+  stopRover();
+
+  Serial.println(F("S&R ROVER READY"));
+  Serial.println(F("F=forward B=backward"));
+  Serial.println(F("L=left R=right S=stop"));
+  Serial.println(F("O=gripper open C=gripper close"));
+  Serial.println(F("1=slow 2=medium 3=fast"));
+}
+
+void loop() {
+  if (!Serial.available()) return;
+
+  char cmd = Serial.read();
+
+  switch (cmd) {
+    case 'F':
+    case 'f':
+      drive(motorSpeed, motorSpeed);
+      Serial.println(F("FORWARD"));
+      break;
+
+    case 'B':
+    case 'b':
+      drive(-motorSpeed, -motorSpeed);
+      Serial.println(F("BACKWARD"));
+      break;
+
+    case 'L':
+    case 'l':
+      drive(-motorSpeed, motorSpeed);
+      Serial.println(F("LEFT"));
+      break;
+
+    case 'R':
+    case 'r':
+      drive(motorSpeed, -motorSpeed);
+      Serial.println(F("RIGHT"));
+      break;
+
+    case 'S':
+    case 's':
+      stopRover();
+      Serial.println(F("STOPPED"));
+      break;
+
+    case 'O':
+    case 'o':
+      gripper.write(GRIP_OPEN);
+      Serial.println(F("GRIPPER OPEN"));
+      break;
+
+    case 'C':
+    case 'c':
+      gripper.write(GRIP_CLOSED);
+      Serial.println(F("GRIPPER CLOSED"));
+      break;
+
+    case '1':
+      motorSpeed = 100;
+      Serial.println(F("SPEED=100"));
+      break;
+
+    case '2':
+      motorSpeed = 150;
+      Serial.println(F("SPEED=150"));
+      break;
+
+    case '3':
+      motorSpeed = 200;
+      Serial.println(F("SPEED=200"));
+      break;
+  }
+}
